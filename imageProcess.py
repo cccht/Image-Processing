@@ -314,8 +314,8 @@ class Ui_MainWindow(QWidget):
 
     # 载入
     def action_2_click(self):
-        img_name = "F:/1.jpg"
-        # img_name, imgType = QFileDialog.getOpenFileName(self, "打开图片", "", "*.jpg;;*.png;;All Files(*)")
+        # img_name = "F:/1.jpg"
+        img_name, imgType = QFileDialog.getOpenFileName(self, "打开图片", "", "*.jpg;;*.png;;All Files(*)")
 
         if img_name == "":
             return 0
