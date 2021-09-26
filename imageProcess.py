@@ -17,6 +17,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_MainWindow(QWidget):
     file_name = ''
+    image = []
+    opencv_img = []
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(966, 696)
@@ -169,7 +171,7 @@ class Ui_MainWindow(QWidget):
         self.action_9.setText(_translate("MainWindow", "高斯噪声"))
         self.action_10.setText(_translate("MainWindow", "椒盐噪声"))
         self.action_11.setText(_translate("MainWindow", "黑白二值"))
-        self.action_12.setText(_translate("MainWindow", "三维旋转"))
+        self.action_12.setText(_translate("MainWindow", "饱和度"))
         self.action_13.setText(_translate("MainWindow", "艺术效果"))
         self.action_17.setText(_translate("MainWindow", "可选文字"))
         self.action_18.setText(_translate("MainWindow", "图片更正"))
@@ -193,11 +195,11 @@ class Ui_MainWindow(QWidget):
         self.action_91.triggered.connect(lambda: self.RotateClock(1))
         self.actionup_10.triggered.connect(lambda: self.update_alpha(1))
         self.actionlow_10.triggered.connect(lambda: self.update_alpha(0))
-        # self.action_2.clicked.connect(self.action_2_click)
+        self.action_12.triggered.connect(lambda: self.change_bhd())
+        # self.action_2.clicked.connect(self.action_2_click) change_bhd
 
     # 更新亮度
     def update_alpha(self, method):
-
         if method == 1:
             self.image = np.uint8(np.clip((2 * (np.int16(self.image) - 60) + 50), 0, 255))
         else:
@@ -241,13 +243,53 @@ class Ui_MainWindow(QWidget):
         self.image = output
         self.dis_cv_img()
 
-    # 模糊
+    # 饱和度
+    def change_bhd(self):
+        # 加载图片 读取彩色图像归一化且转换为浮点型
+        image = cv.imread(self.file_name, cv.IMREAD_COLOR).astype(np.float32) / 255.0
+        print(len(image[0]))
+        # 颜色空间转换 BGR转为HLS
+        hlsImg = cv.cvtColor(image, cv.COLOR_BGR2HLS)
+        MAX_VALUE = 10
+        MAX_VALUE2 = 100
+
+        # 调整饱和度和亮度
+        # 复制原图
+        hlsCopy = np.copy(hlsImg)
+        # 得到 lightness 和 saturation 的值
+        lightness = 1
+        saturation = 1
+        # 调整亮度
+        hlsCopy[:, :, 1] = (1.0 + lightness / float(MAX_VALUE)) * hlsCopy[:, :, 1]
+        hlsCopy[:, :, 1][hlsCopy[:, :, 1] > 1] = 1
+        # 饱和度
+        hlsCopy[:, :, 2] = (1.0 + saturation / float(MAX_VALUE2)) * hlsCopy[:, :, 2]
+        hlsCopy[:, :, 2][hlsCopy[:, :, 2] > 1] = 1
+        # HLS2BGR
+        lsImg = (cv.cvtColor(hlsCopy, cv.COLOR_HLS2BGR) * 255).astype(int)
+
+        # b, g, r = cv.split(lsImg)
+        # self.image = cv.merge([r, g, b])
+
+        cv.imwrite(self.file_name+'_temp.png', lsImg)
+        self.opencv_img = cv.imread(self.file_name + '_temp.png')
+        # print(opencv_img)
+        # 设置图片在label展示
+        if self.opencv_img is None:
+            print('None')
+        else:
+            self.image = cv.cvtColor(self.opencv_img, cv.COLOR_BGR2RGB)
+            print(self.image.data)
+            self.dis_cv_img()
+        # self.dis_cv_img()
+
+    # 锐化
     def sharpen(self):
         kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], np.float32)  # 锐化
         self.image = cv.filter2D(self.image, -1, kernel=kernel)
         self.dis_cv_img()
 
-    # 锐化
+    # 模糊
     def blur(self):
         self.image = cv.blur(self.image, (15, 1))
         self.dis_cv_img()
@@ -272,8 +314,8 @@ class Ui_MainWindow(QWidget):
 
     # 载入
     def action_2_click(self):
-        # img_name = "F:/1.jpg"
-        img_name, imgType = QFileDialog.getOpenFileName(self, "打开图片", "", "*.jpg;;*.png;;All Files(*)")
+        img_name = "F:/1.jpg"
+        # img_name, imgType = QFileDialog.getOpenFileName(self, "打开图片", "", "*.jpg;;*.png;;All Files(*)")
 
         if img_name == "":
             return 0
@@ -288,17 +330,24 @@ class Ui_MainWindow(QWidget):
         else:
             print("读取成功")
             self.image = cv.cvtColor(self.opencv_img, cv.COLOR_BGR2RGB)
+            print(self.image.data)
             self.dis_cv_img()
+            self.change_bhd()
 
     # 图片处理后展示
     def dis_cv_img(self):
+        height, width, byteValue = self.image.shape
+        print(height, width, byteValue)
+        byteValue = byteValue * width
+
+        qimage = QtGui.QImage(self.image, width, height, byteValue, QtGui.QImage.Format_RGB888)
         # self.label_2.setPixmap(QPixmap(""))
-        qt_img = QtGui.QImage(self.image.data,
-                              self.image.shape[1],
-                              self.image.shape[0],
-                              self.image.shape[1] * 3,
-                              QtGui.QImage.Format_RGB888)
-        self.label_2.setPixmap(QPixmap(qt_img))
+        # qt_img = QtGui.QImage(self.image.data,
+        #                       self.image.shape[1],
+        #                       self.image.shape[0],
+        #                       self.image.shape[1] * 3,
+        #                       QtGui.QImage.Format_RGB888)
+        self.label_2.setPixmap(QPixmap(qimage))
         self.label_2.show()
         self.label_2.setScaledContents(True)
 
