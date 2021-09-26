@@ -26,5 +26,10 @@ PyQt5==5.15.4
 
 #### 使用
 
-下载 `py` 及 `requirements.txt` 基本安装即可
+下载 `py` 及 `requirements.txt` 进行常规安装即可
 
+`pip install -r requirements.txt`
+
+#### 后记
+
+作业还有很多待完善之处，之后会继续改之，有问题可留言~
