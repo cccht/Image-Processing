@@ -25,5 +25,5 @@ PyQt5==5.15.4
 
 #### 使用
 
-下载 `py` 及 `requests.txt` 基本安装即可
+下载 `py` 及 `requirements.txt` 基本安装即可
 
